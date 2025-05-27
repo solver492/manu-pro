@@ -1,0 +1,26 @@
+Warning: Invalid value for prop `dismiss` on &lt;li&gt; tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
+    at li
+    at https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/chunk-JJEPVDPJ.js?v=fc14926a:43:13
+    at https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/chunk-6WYJTVR3.js?v=fc14926a:80:13
+    at https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/chunk-6WYJTVR3.js?v=fc14926a:56:13
+    at https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/chunk-JJEPVDPJ.js?v=fc14926a:43:13
+    at https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/chunk-SJZNOC52.js?v=fc14926a:161:7
+    at https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/chunk-6WYJTVR3.js?v=fc14926a:80:13
+    at https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/chunk-6WYJTVR3.js?v=fc14926a:56:13
+    at https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/@radix-ui_react-toast.js?v=fc14926a:73:15
+    at Provider (https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/chunk-SJZNOC52.js?v=fc14926a:60:15)
+    at https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/@radix-ui_react-toast.js?v=fc14926a:423:7
+    at Presence (https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/chunk-SJZNOC52.js?v=fc14926a:391:11)
+    at https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/@radix-ui_react-toast.js?v=fc14926a:370:13
+    at _c3 (https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/src/components/ui/toast.jsx:60:41)
+    at Provider (https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/chunk-SJZNOC52.js?v=fc14926a:60:15)
+    at Provider (https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/chunk-SJZNOC52.js?v=fc14926a:60:15)
+    at CollectionProvider (https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/@radix-ui_react-toast.js?v=fc14926a:51:13)
+    at ToastProvider (https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/@radix-ui_react-toast.js?v=fc14926a:146:5)
+    at Toaster (https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/src/components/ui/toaster.jsx:30:22)
+    at AuthProvider (https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/src/contexts/AuthContext.jsx:22:32)
+    at Router (https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/react-router-dom.js?v=fc14926a:4517:15)
+    at BrowserRouter (https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173/node_modules/.vite/deps/react-router-dom.js?v=fc14926a:5266:5)
+Failed to fetch
+API Error (/login): Failed to fetch
+Failed to fetch
