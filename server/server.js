@@ -6,8 +6,16 @@ import { v4 as uuidv4 } from 'uuid';
 const app = express();
 const PORT = process.env.PORT || (process.env.REPL_SLUG ? 5000 : 3001);
 
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 app.use(express.json());
+
+// Route de test
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Serveur backend fonctionnel' });
+});
 
 // Routes pour les sites
 app.get('/api/sites', (req, res) => {
@@ -137,6 +145,10 @@ app.get('/api/stats/dashboard', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur backend démarré sur http://0.0.0.0:${PORT}`);
+  console.log(`API accessible sur: http://0.0.0.0:${PORT}/api`);
 }).on('error', (err) => {
   console.error('Erreur serveur:', err);
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} déjà utilisé`);
+  }
 });

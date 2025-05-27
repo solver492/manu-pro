@@ -1,7 +1,19 @@
 
-const API_BASE_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3001/api' 
-  : `${window.location.protocol}//${window.location.hostname}:5000/api`.replace('-00-', '-01-');
+const getApiBaseUrl = () => {
+  if (window.location.hostname === 'localhost') {
+    return 'http://localhost:3001/api';
+  }
+  
+  // Pour Replit, utiliser l'URL avec le port backend
+  const hostname = window.location.hostname;
+  if (hostname.includes('.replit.dev')) {
+    return `${window.location.protocol}//${hostname.replace('-00-', '-01-')}:5000/api`;
+  }
+  
+  return `${window.location.protocol}//${hostname}:5000/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 class ApiService {
   async request(endpoint, options = {}) {
