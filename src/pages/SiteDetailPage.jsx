@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
@@ -29,10 +28,10 @@ const SiteDetailPage = () => {
           ApiService.getSite(siteId),
           ApiService.getSiteShipments(siteId)
         ]);
-        
+
         setSite(siteResponse);
         setShipments(shipmentsResponse.data);
-        
+
         const currentSite = siteResponse;
 
         if (currentSite) {
@@ -70,14 +69,14 @@ const SiteDetailPage = () => {
             if (shipmentMonth === currentMonth && shipmentYear === currentYear) {
               handlersMonth += ship.handlerCount;
             }
-            
+
             historyLast6Months.forEach(histMonth => {
               if (histMonth.month === shipmentDate.toLocaleString('fr-FR', { month: 'short' }) && histMonth.year === shipmentYear) {
                 histMonth.count += ship.handlerCount;
               }
             });
           });
-          
+
           setSiteStats({ handlersToday, handlersMonth, historyLast6Months, totalCostGenerated });
         }
       } catch (error) {
@@ -193,7 +192,7 @@ const SiteDetailPage = () => {
           </CardContent>
         </Card>
       </motion.div>
-      
+
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <Card className="shadow-xl">
           <CardHeader>
