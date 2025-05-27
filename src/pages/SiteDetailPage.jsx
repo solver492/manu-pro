@@ -1,17 +1,17 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, Users, DollarSign, CalendarDays, BarChart2, Send, ListOrdered } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ApiService from '@/services/api';
 
 const SiteDetailPage = () => {
   const { id: siteId } = useParams();
-  const [sites, setSites] = useState([]);
-  const [shipments, setShipments] = useState([]);
   const [site, setSite] = useState(null);
+  const [shipments, setShipments] = useState([]);
   const [siteStats, setSiteStats] = useState({
     handlersToday: 0,
     handlersMonth: 0,
@@ -35,52 +35,60 @@ const SiteDetailPage = () => {
         
         const currentSite = siteResponse;
 
-    if (currentSite) {
-      document.title = `Détails Site - ${currentSite.name} | MonAuxiliaire Manu-Pro`;
-      const now = new Date();
-      const todayStr = now.toISOString().split('T')[0];
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
+        if (currentSite) {
+          document.title = `Détails Site - ${currentSite.name} | MonAuxiliaire Manu-Pro`;
+          const now = new Date();
+          const todayStr = now.toISOString().split('T')[0];
+          const currentMonth = now.getMonth();
+          const currentYear = now.getFullYear();
 
-      let handlersToday = 0;
-      let handlersMonth = 0;
-      const historyLast6Months = Array(6).fill(null).map((_, i) => {
-        const d = new Date(now);
-        d.setMonth(now.getMonth() - i);
-        return { month: d.toLocaleString('fr-FR', { month: 'short' }), year: d.getFullYear(), count: 0 };
-      }).reverse();
+          let handlersToday = 0;
+          let handlersMonth = 0;
+          const historyLast6Months = Array(6).fill(null).map((_, i) => {
+            const d = new Date(now);
+            d.setMonth(now.getMonth() - i);
+            return { month: d.toLocaleString('fr-FR', { month: 'short' }), year: d.getFullYear(), count: 0 };
+          }).reverse();
 
-      let totalCostGenerated = 0;
-      const siteSpecificShipments = shipments
-        .filter(ship => ship.siteId === siteId)
-        .sort((a, b) => new Date(b.shipmentDate) - new Date(a.shipmentDate)); // Sort by date descending
+          let totalCostGenerated = 0;
+          const siteSpecificShipments = shipmentsResponse.data
+            .filter(ship => ship.siteId === siteId)
+            .sort((a, b) => new Date(b.shipmentDate) - new Date(a.shipmentDate));
 
-      setSiteShipmentHistory(siteSpecificShipments);
+          setSiteShipmentHistory(siteSpecificShipments);
 
-      siteSpecificShipments.forEach(ship => {
-        const shipmentDate = new Date(ship.shipmentDate);
-        const shipmentMonth = shipmentDate.getMonth();
-        const shipmentYear = shipmentDate.getFullYear();
+          siteSpecificShipments.forEach(ship => {
+            const shipmentDate = new Date(ship.shipmentDate);
+            const shipmentMonth = shipmentDate.getMonth();
+            const shipmentYear = shipmentDate.getFullYear();
 
-        totalCostGenerated += ship.handlerCount * HANDLER_COST;
+            totalCostGenerated += ship.handlerCount * HANDLER_COST;
 
-        if (ship.shipmentDate === todayStr) {
-          handlersToday += ship.handlerCount;
+            if (ship.shipmentDate === todayStr) {
+              handlersToday += ship.handlerCount;
+            }
+            if (shipmentMonth === currentMonth && shipmentYear === currentYear) {
+              handlersMonth += ship.handlerCount;
+            }
+            
+            historyLast6Months.forEach(histMonth => {
+              if (histMonth.month === shipmentDate.toLocaleString('fr-FR', { month: 'short' }) && histMonth.year === shipmentYear) {
+                histMonth.count += ship.handlerCount;
+              }
+            });
+          });
+          
+          setSiteStats({ handlersToday, handlersMonth, historyLast6Months, totalCostGenerated });
         }
-        if (shipmentMonth === currentMonth && shipmentYear === currentYear) {
-          handlersMonth += ship.handlerCount;
-        }
-        
-        historyLast6Months.forEach(histMonth => {
-          if (histMonth.month === shipmentDate.toLocaleString('fr-FR', { month: 'short' }) && histMonth.year === shipmentYear) {
-            histMonth.count += ship.handlerCount;
-          }
-        });
-      });
-      
-      setSiteStats({ handlersToday, handlersMonth, historyLast6Months, totalCostGenerated });
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+      }
+    };
+
+    if (siteId) {
+      fetchData();
     }
-  }, [siteId, sites, shipments]);
+  }, [siteId]);
 
   if (!site) {
     return (
@@ -166,7 +174,7 @@ const SiteDetailPage = () => {
           </CardHeader>
           <CardContent className="h-[250px] flex items-end space-x-2 p-4 bg-muted/30 rounded-b-lg">
             {siteStats.historyLast6Months.map((data, index) => {
-              const maxSends = Math.max(...siteStats.historyLast6Months.map(d => d.count), 1); // Avoid division by zero
+              const maxSends = Math.max(...siteStats.historyLast6Months.map(d => d.count), 1);
               const barHeight = (data.count / maxSends) * 100;
               return (
                 <div key={index} className="flex-1 flex flex-col items-center">

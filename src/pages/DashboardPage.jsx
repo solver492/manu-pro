@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import ApiService from '@/services/api';
@@ -42,7 +41,7 @@ const DashboardPage = () => {
       try {
         setIsLoading(true);
         const data = await ApiService.getDashboardStats();
-        
+
         // Formater les données mensuelles
         const monthlyData = Array(12).fill(0).map((_, i) => ({
           month: new Date(0, i).toLocaleString('fr-FR', { month: 'short' }),
@@ -72,33 +71,7 @@ const DashboardPage = () => {
     };
 
     fetchDashboardData();
-
-        if (shipmentMonth === currentMonth) {
-          totalHandlersMonth += shipment.handlerCount;
-        }
-      }
-      
-      const site = clientSites.find(s => s.id === shipment.siteId);
-      if (site) {
-        clientSendsMap.set(site.name, (clientSendsMap.get(site.name) || 0) + shipment.handlerCount);
-      }
-    });
-
-    const topClients = Array.from(clientSendsMap.entries())
-      .map(([name, sends]) => ({ name, sends }))
-      .sort((a, b) => b.sends - a.sends)
-      .slice(0, 5);
-
-    setDashboardData({
-      totalHandlersMonth,
-      totalRevenueMonth: totalHandlersMonth * HANDLER_COST,
-      totalHandlersYear,
-      totalRevenueYear: totalHandlersYear * HANDLER_COST,
-      monthlySends: monthlySendsData,
-      topClients,
-    });
-
-  }, [shipments, clientSites]);
+  }, []);
 
   return (
     <div className="space-y-8 p-1">
@@ -199,7 +172,7 @@ const DashboardPage = () => {
           </Card>
         </motion.div>
       </div>
-      
+
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
         <Card className="shadow-lg border-l-4 border-orange-500">
           <CardHeader>
@@ -216,4 +189,3 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
-  
