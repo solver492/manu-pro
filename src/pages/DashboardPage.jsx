@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import ApiService from '@/services/api';
 import { DollarSign, Users, TrendingUp, AlertTriangle, BarChartBig } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -27,42 +27,51 @@ const StatCard = ({ title, value, icon, description, colorClass }) => (
 );
 
 const DashboardPage = () => {
-  const [shipments] = useLocalStorage('shipments', []);
-  const [clientSites] = useLocalStorage('clientSites', []);
   const [dashboardData, setDashboardData] = useState({
     totalHandlersMonth: 0,
     totalRevenueMonth: 0,
     totalHandlersYear: 0,
     totalRevenueYear: 0,
-    monthlySends: [], // { month: 'Jan', count: 120 }
-    topClients: [], // { name: 'Client A', sends: 50 }
+    monthlySends: [],
+    topClients: [],
   });
-
-  const HANDLER_COST = 150;
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        const data = await ApiService.getDashboardStats();
+        
+        // Formater les données mensuelles
+        const monthlyData = Array(12).fill(0).map((_, i) => ({
+          month: new Date(0, i).toLocaleString('fr-FR', { month: 'short' }),
+          count: 0,
+        }));
 
-    let totalHandlersMonth = 0;
-    let totalHandlersYear = 0;
-    
-    const monthlySendsData = Array(12).fill(0).map((_, i) => ({
-      month: new Date(0, i).toLocaleString('fr-FR', { month: 'short' }),
-      count: 0,
-    }));
+        data.monthlySends.forEach(item => {
+          const monthIndex = parseInt(item.month) - 1;
+          if (monthIndex >= 0 && monthIndex < 12) {
+            monthlyData[monthIndex].count = item.count;
+          }
+        });
 
-    const clientSendsMap = new Map();
+        setDashboardData({
+          ...data,
+          monthlySends: monthlyData,
+          topClients: data.topClients.map(client => ({
+            name: client.name,
+            sends: client.total_handlers || 0
+          }))
+        });
+      } catch (error) {
+        console.error('Erreur chargement dashboard:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    shipments.forEach(shipment => {
-      const shipmentDate = new Date(shipment.shipmentDate);
-      const shipmentMonth = shipmentDate.getMonth();
-      const shipmentYear = shipmentDate.getFullYear();
-
-      if (shipmentYear === currentYear) {
-        totalHandlersYear += shipment.handlerCount;
-        monthlySendsData[shipmentMonth].count += shipment.handlerCount;
+    fetchDashboardData();
 
         if (shipmentMonth === currentMonth) {
           totalHandlersMonth += shipment.handlerCount;

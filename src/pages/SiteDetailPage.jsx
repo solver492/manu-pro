@@ -9,8 +9,8 @@ import { motion } from 'framer-motion';
 
 const SiteDetailPage = () => {
   const { id: siteId } = useParams();
-  const [sites] = useLocalStorage('clientSites', []);
-  const [shipments] = useLocalStorage('shipments', []);
+  const [sites, setSites] = useState([]);
+  const [shipments, setShipments] = useState([]);
   const [site, setSite] = useState(null);
   const [siteStats, setSiteStats] = useState({
     handlersToday: 0,
@@ -23,8 +23,17 @@ const SiteDetailPage = () => {
   const HANDLER_COST = 150;
 
   useEffect(() => {
-    const currentSite = sites.find(s => s.id === siteId);
-    setSite(currentSite);
+    const fetchData = async () => {
+      try {
+        const [siteResponse, shipmentsResponse] = await Promise.all([
+          ApiService.getSite(siteId),
+          ApiService.getSiteShipments(siteId)
+        ]);
+        
+        setSite(siteResponse);
+        setShipments(shipmentsResponse.data);
+        
+        const currentSite = siteResponse;
 
     if (currentSite) {
       document.title = `Détails Site - ${currentSite.name} | MonAuxiliaire Manu-Pro`;

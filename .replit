@@ -11,3 +11,19 @@ run = ["sh", "-c", "npm run dev"]
 localPort = 5173
 externalPort = 5173
 exposeLocalhost = true
+
+[workflows]
+runButton = "Run Application"
+
+[[workflows.workflow]]
+name = "Run Application"
+author = 43198077
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node server/server.js"

@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { clientSites as initialClientSitesData } from '@/data/initialData';
+import ApiService from '@/services/api';
+import { useToast } from '@/components/ui/use-toast';
 import { Eye, Send, Search, PlusCircle, Edit2, Trash2, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useToast } from '@/components/ui/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,31 +21,61 @@ import {
 
 
 const ClientSitesPage = () => {
-  const [clientSites, setClientSites] = useLocalStorage('clientSites', initialClientSitesData);
+  const [clientSites, setClientSites] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const { toast } = useToast();
   const [siteToDelete, setSiteToDelete] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchSites = async () => {
+      try {
+        setIsLoading(true);
+        const response = await ApiService.getSites();
+        setClientSites(response.data.map(site => ({
+          id: site.id,
+          name: site.name,
+          address: site.address,
+          status: site.status
+        })));
+      } catch (error) {
+        toast({ 
+          title: "Erreur", 
+          description: "Impossible de charger les sites.", 
+          variant: "destructive" 
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSites();
+  }, [toast]);
 
   const filteredSites = clientSites.filter(site =>
     site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (site.address && site.address.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleAddSite = () => {
-    // For now, let's just add a generic site.
-    // In a real app, this would open a form.
-    const newSiteId = `site-${Date.now()}`;
-    const newSite = { 
-      id: newSiteId, 
-      name: `Nouveau Site ${clientSites.length + 1}`, 
-      address: 'Adresse à définir', 
-      status: 'actif' 
-    };
-    setClientSites(prevSites => [...prevSites, newSite]);
-    toast({
-      title: "Site Ajouté",
-      description: `${newSite.name} a été ajouté à la liste.`,
-    });
+  const handleAddSite = async () => {
+    try {
+      const newSiteData = {
+        name: `Nouveau Site ${clientSites.length + 1}`,
+        address: 'Adresse à définir',
+        status: 'active'
+      };
+      const addedSite = await ApiService.createSite(newSiteData);
+      setClientSites(prevSites => [...prevSites, addedSite]);
+      toast({
+        title: "Site Ajouté",
+        description: `${addedSite.name} a été ajouté avec succès.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: `Impossible d'ajouter le site: ${error.message}`,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEditSite = (siteId) => {
@@ -58,14 +87,22 @@ const ClientSitesPage = () => {
     });
   };
 
-  const confirmDeleteSite = () => {
+  const confirmDeleteSite = async () => {
     if (siteToDelete) {
-      setClientSites(prevSites => prevSites.filter(s => s.id !== siteToDelete.id));
-      toast({
-        title: "Site Supprimé",
-        description: `Le site ${siteToDelete.name} a été supprimé.`,
-        variant: "destructive",
-      });
+      try {
+        await ApiService.deleteSite(siteToDelete.id);
+        setClientSites(prevSites => prevSites.filter(site => site.id !== siteToDelete.id));
+        toast({
+          title: "Site Supprimé",
+          description: `${siteToDelete.name} a été supprimé avec succès.`,
+        });
+      } catch (error) {
+        toast({
+          title: "Erreur",
+          description: `Impossible de supprimer le site: ${error.message}`,
+          variant: "destructive"
+        });
+      }
       setSiteToDelete(null);
     }
   };
@@ -105,7 +142,11 @@ const ClientSitesPage = () => {
         </div>
       </motion.div>
 
-      {filteredSites.length > 0 ? (
+      {isLoading ? (
+        <div className="text-center p-10 text-muted-foreground bg-card rounded-lg shadow-md">
+          <p className="text-2xl font-semibold mb-2">Chargement des sites...</p>
+        </div>
+      ) : filteredSites.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <AnimatePresence>
             {filteredSites.map((site, index) => (
