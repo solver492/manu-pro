@@ -1,7 +1,7 @@
 
 const API_BASE_URL = window.location.hostname === 'localhost' 
   ? 'http://localhost:3001/api' 
-  : `${window.location.protocol}//${window.location.hostname}:3001/api`;
+  : `${window.location.protocol}//${window.location.hostname}:5000/api`.replace('-00-', '-01-');
 
 class ApiService {
   async request(endpoint, options = {}) {
@@ -16,12 +16,17 @@ class ApiService {
     try {
       const response = await fetch(url, config);
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erreur réseau');
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: `Erreur HTTP ${response.status}` };
+        }
+        throw new Error(errorData.error || `Erreur réseau: ${response.status}`);
       }
       return await response.json();
     } catch (error) {
-      console.error(`API Error (${endpoint}):`, error);
+      console.error(`API Error (${endpoint}):`, error.message || error);
       throw error;
     }
   }
