@@ -28,34 +28,21 @@ const StatisticsPage = () => {
       
       let sites = [];
       let dashboardStats = null;
+      let shipments = [];
       
       try {
         // Tentative de récupération via API
         sites = await ApiService.getSites();
+        const shipmentsResponse = await ApiService.getShipments();
+        shipments = shipmentsResponse?.data || [];
         dashboardStats = await ApiService.getDashboardStats();
         console.log('📊 Sites récupérés via API:', sites?.length || 0);
       } catch (apiError) {
         console.warn('⚠️ API non disponible, utilisation des données localStorage:', apiError.message);
         
         // Fallback vers localStorage
-        const storedSites = JSON.parse(localStorage.getItem('clientSites') || '[]');
-        const storedShipments = JSON.parse(localStorage.getItem('shipments') || '[]');
-        
-        sites = storedSites;
-        
-        // Simuler les stats dashboard à partir des données locales
-        const currentYear = new Date().getFullYear();
-        const monthlySends = Array(12).fill(0).map((_, index) => {
-          const count = storedShipments.filter(ship => {
-            const shipDate = new Date(ship.shipment_date);
-            return shipDate.getFullYear() === currentYear && shipDate.getMonth() === index;
-          }).reduce((sum, ship) => sum + (parseInt(ship.handler_count) || 0), 0);
-          
-          return { month: (index + 1).toString(), count };
-        });
-        
-        dashboardStats = { monthlySends };
-        console.log('📊 Données récupérées depuis localStorage:', sites.length, 'sites');
+        sites = JSON.parse(localStorage.getItem('clientSites') || '[]');
+        shipments = JSON.parse(localStorage.getItem('shipments') || '[]');
       }
       
       // Validation des données reçues
@@ -71,114 +58,78 @@ const StatisticsPage = () => {
       const prevMonthYear = (currentMonth === 0) ? currentYear - 1 : currentYear;
 
       // Traiter les statistiques par site
-      const siteStatsPromises = sites.map(async (site) => {
-        try {
-          let siteShipments = [];
+      const siteStats = sites.map((site) => {
+        const siteShipments = shipments.filter(ship => ship.site_id === site.id);
+        
+        let handlersThisMonth = 0;
+        let handlersThisYear = 0;
+        let handlersPrevMonth = 0;
+
+        siteShipments.forEach(ship => {
+          const shipDate = new Date(ship.shipment_date);
+          const handlerCount = parseInt(ship.handler_count) || 0;
           
-          try {
-            // Tentative API
-            const apiShipments = await ApiService.getSiteShipments(site.id);
-            siteShipments = apiShipments?.data || [];
-          } catch (error) {
-            // Fallback localStorage
-            const storedShipments = JSON.parse(localStorage.getItem('shipments') || '[]');
-            siteShipments = storedShipments.filter(ship => ship.site_id === site.id);
+          if (shipDate.getFullYear() === currentYear) {
+            handlersThisYear += handlerCount;
+            
+            if (shipDate.getMonth() === currentMonth) {
+              handlersThisMonth += handlerCount;
+            }
           }
           
-          console.log(`Envois pour site ${site.name}:`, siteShipments.length);
-          
-          let handlersThisMonth = 0;
-          let handlersThisYear = 0;
-          let handlersPrevMonth = 0;
-
-          if (Array.isArray(siteShipments)) {
-            siteShipments.forEach(ship => {
-              const shipDate = new Date(ship.shipment_date);
-              const handlerCount = parseInt(ship.handler_count) || 0;
-              
-              if (shipDate.getFullYear() === currentYear) {
-                handlersThisYear += handlerCount;
-                if (shipDate.getMonth() === currentMonth) {
-                  handlersThisMonth += handlerCount;
-                }
-              }
-              if (shipDate.getFullYear() === prevMonthYear && shipDate.getMonth() === prevMonth) {
-                handlersPrevMonth += handlerCount;
-              }
-            });
-          }
-          
-          const evolution = handlersThisMonth - handlersPrevMonth;
-          const result = {
-            id: site.id,
-            name: site.name || 'Site inconnu',
-            handlersThisMonth,
-            handlersThisYear,
-            revenueGenerated: handlersThisYear * HANDLER_COST,
-            evolution,
-          };
-          
-          console.log(`Stats pour ${site.name}:`, result);
-          return result;
-        } catch (error) {
-          console.error(`Erreur pour le site ${site.id}:`, error);
-          return {
-            id: site.id,
-            name: site.name || 'Site inconnu',
-            handlersThisMonth: 0,
-            handlersThisYear: 0,
-            revenueGenerated: 0,
-            evolution: 0,
-          };
-        }
-      });
-
-      const siteStats = await Promise.all(siteStatsPromises);
-      console.log('Stats finales des sites:', siteStats);
-      setStatsData(siteStats.sort((a, b) => b.revenueGenerated - a.revenueGenerated));
-
-      // Traiter l'évolution mensuelle
-      const monthlyEvolutionData = Array(12).fill(0).map((_, i) => ({
-        month: new Date(0, i).toLocaleString('fr-FR', { month: 'short' }),
-        count: 0,
-      }));
-
-      if (dashboardStats && dashboardStats.monthlySends && Array.isArray(dashboardStats.monthlySends)) {
-        dashboardStats.monthlySends.forEach(item => {
-          const monthIndex = parseInt(item.month) - 1;
-          if (monthIndex >= 0 && monthIndex < 12) {
-            monthlyEvolutionData[monthIndex].count = parseInt(item.count) || 0;
+          if (shipDate.getMonth() === prevMonth && 
+              shipDate.getFullYear() === prevMonthYear) {
+            handlersPrevMonth += handlerCount;
           }
         });
-      }
 
-      console.log('Données évolution mensuelle:', monthlyEvolutionData);
-      setOverallMonthlyEvolution(monthlyEvolutionData);
+        return {
+          id: site.id,
+          name: site.name,
+          handlersThisMonth,
+          handlersThisYear,
+          handlersPrevMonth,
+          evolution: handlersPrevMonth > 0 
+            ? ((handlersThisMonth - handlersPrevMonth) / handlersPrevMonth) * 100
+            : 0,
+          revenueGenerated: handlersThisYear * HANDLER_COST
+        };
+      });
 
-    } catch (error) {
-      console.error('Erreur lors du chargement des statistiques:', error);
-      toast({ 
-        title: "Mode Démo", 
-        description: "Affichage des données de démonstration (API indisponible)", 
-        variant: "default" 
+      setStatsData(siteStats.sort((a, b) => b.handlersThisYear - a.handlersThisYear));
+
+      // Calculer l'évolution mensuelle globale
+      const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+      
+      // Calculer le total des manutentionnaires par mois
+      const monthlyTotals = new Array(12).fill(0);
+      
+      shipments.forEach(ship => {
+        const shipDate = new Date(ship.shipment_date);
+        if (shipDate.getFullYear() === currentYear) {
+          const month = shipDate.getMonth();
+          const handlerCount = parseInt(ship.handler_count) || 0;
+          monthlyTotals[month] += handlerCount;
+        }
       });
       
-      // Données de démonstration
-      const demoStats = [
-        { id: 1, name: "Site Demo A", handlersThisMonth: 45, handlersThisYear: 520, revenueGenerated: 78000, evolution: 12 },
-        { id: 2, name: "Site Demo B", handlersThisMonth: 32, handlersThisYear: 380, revenueGenerated: 57000, evolution: -5 },
-        { id: 3, name: "Site Demo C", handlersThisMonth: 28, handlersThisYear: 295, revenueGenerated: 44250, evolution: 8 }
-      ];
+      const monthlyStats = monthNames.map((monthName, index) => ({
+        month: monthName,
+        count: monthlyTotals[index]
+      }));
       
-      const demoEvolution = [
-        { month: 'Jan', count: 45 }, { month: 'Fév', count: 52 }, { month: 'Mar', count: 38 },
-        { month: 'Avr', count: 61 }, { month: 'Mai', count: 47 }, { month: 'Jun', count: 55 },
-        { month: 'Jul', count: 42 }, { month: 'Aoû', count: 39 }, { month: 'Sep', count: 48 },
-        { month: 'Oct', count: 53 }, { month: 'Nov', count: 41 }, { month: 'Déc', count: 38 }
-      ];
-      
-      setStatsData(demoStats);
-      setOverallMonthlyEvolution(demoEvolution);
+      setOverallMonthlyEvolution(monthlyStats);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Erreur lors du chargement des statistiques:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les statistiques. Veuillez réessayer.",
+        variant: "destructive"
+      });
+      setStatsData([]);
+      setOverallMonthlyEvolution([]);
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -251,7 +202,7 @@ const StatisticsPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nom du Site</TableHead>
+                  <TableHead>ID du Site</TableHead>
                   <TableHead className="text-center">Manut. ce Mois</TableHead>
                   <TableHead className="text-center">Manut. cette Année</TableHead>
                   <TableHead className="text-right">CA Généré (Année)</TableHead>
@@ -261,7 +212,7 @@ const StatisticsPage = () => {
               <TableBody>
                 {statsData.map((site) => (
                   <TableRow key={site.id} className="hover:bg-muted/30 print:hover:bg-transparent">
-                    <TableCell className="font-medium text-foreground">{site.name}</TableCell>
+                    <TableCell className="font-medium text-foreground">{site.id}</TableCell>
                     <TableCell className="text-center">{site.handlersThisMonth}</TableCell>
                     <TableCell className="text-center">{site.handlersThisYear}</TableCell>
                     <TableCell className="text-right">{site.revenueGenerated.toLocaleString('fr-FR')} DH</TableCell>
@@ -293,7 +244,7 @@ const StatisticsPage = () => {
                 return (
                   <div key={site.id} className="text-sm">
                     <div className="flex justify-between mb-1">
-                      <span className="font-medium text-foreground">{site.name}</span>
+                      <span className="font-medium text-foreground">{site.id}</span>
                       <span className="text-primary font-semibold">{site.handlersThisYear}</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2.5">
@@ -321,9 +272,35 @@ const StatisticsPage = () => {
               <svg viewBox="0 0 300 150" className="w-full h-full">
                 <line x1="20" y1="130" x2="280" y2="130" stroke="hsl(var(--border))" strokeWidth="1"/>
                 <line x1="20" y1="20" x2="20" y2="130" stroke="hsl(var(--border))" strokeWidth="1"/>
-                {overallMonthlyEvolution.map((data, index) => (
-                  <text key={`label-${index}`} x={25 + index * (250/11)} y="145" fontSize="8" fill="hsl(var(--muted-foreground))" textAnchor="middle">{data.month}</text>
+                {/* Axe Y - Échelle des valeurs */}
+                {[0, 25, 50, 75, 100].map((value, i) => (
+                  <text key={`y-label-${i}`} x="15" y={130 - (value * 1.1)} fontSize="8" fill="hsl(var(--muted-foreground))" textAnchor="end">
+                    {Math.round(value / 100 * Math.max(...overallMonthlyEvolution.map(d => d.count)))}
+                  </text>
                 ))}
+
+                {/* Mois sur l'axe X */}
+                {overallMonthlyEvolution.map((data, index) => (
+                  <text key={`x-label-${index}`} x={25 + index * (250/11)} y="145" fontSize="8" fill="hsl(var(--muted-foreground))" textAnchor="middle">
+                    {data.month}
+                  </text>
+                ))}
+
+                {/* Lignes de la grille */}
+                {[25, 50, 75].map((value, i) => (
+                  <line
+                    key={`grid-${i}`}
+                    x1="20"
+                    y1={130 - (value * 1.1)}
+                    x2="280"
+                    y2={130 - (value * 1.1)}
+                    stroke="hsl(var(--border))"
+                    strokeWidth="0.5"
+                    strokeDasharray="2,2"
+                  />
+                ))}
+
+                {/* Courbe et points */}
                 {(() => {
                   const maxCount = Math.max(...overallMonthlyEvolution.map(d => d.count), 1);
                   const points = overallMonthlyEvolution.map((data, index) => 
@@ -331,9 +308,32 @@ const StatisticsPage = () => {
                   ).join(' ');
                   return (
                     <>
-                      <polyline points={points} fill="none" stroke="hsl(var(--primary))" strokeWidth="2"/>
+                      <polyline 
+                        points={points} 
+                        fill="none" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth="2"
+                      />
                       {overallMonthlyEvolution.map((data, index) => (
-                         data.count > 0 && <circle key={`dot-${index}`} cx={25 + index * (250/11)} cy={130 - (data.count / maxCount * 100)} r="2" fill="hsl(var(--primary))" />
+                        data.count > 0 && (
+                          <g key={`point-${index}`}>
+                            <circle 
+                              cx={25 + index * (250/11)} 
+                              cy={130 - (data.count / maxCount * 100)} 
+                              r="3" 
+                              fill="hsl(var(--primary))" 
+                            />
+                            <text 
+                              x={25 + index * (250/11)} 
+                              y={125 - (data.count / maxCount * 100)} 
+                              fontSize="8" 
+                              fill="hsl(var(--foreground))" 
+                              textAnchor="middle"
+                            >
+                              {data.count}
+                            </text>
+                          </g>
+                        )
                       ))}
                     </>
                   );
