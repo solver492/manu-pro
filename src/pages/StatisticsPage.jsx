@@ -24,13 +24,24 @@ const StatisticsPage = () => {
   const fetchStatisticsData = async () => {
     try {
       setIsLoading(true);
+      console.log('🔄 Chargement des statistiques...');
       
       // Récupérer les sites et leurs statistiques
       const sites = await ApiService.getSites();
-      const dashboardStats = await ApiService.getDashboardStats();
+      console.log('📊 Sites récupérés:', sites?.length || 0);
       
-      console.log('Sites reçus:', sites);
-      console.log('Dashboard stats:', dashboardStats);
+      const dashboardStats = await ApiService.getDashboardStats();
+      console.log('📈 Stats dashboard récupérées:', dashboardStats);
+      
+      // Validation des données reçues
+      if (!sites || !Array.isArray(sites)) {
+        console.warn('⚠️ Aucun site trouvé ou format invalide');
+        throw new Error('Aucun site disponible');
+      }
+      
+      if (!dashboardStats) {
+        console.warn('⚠️ Statistiques dashboard indisponibles');
+      }
       
       const now = new Date();
       const currentMonth = now.getMonth();

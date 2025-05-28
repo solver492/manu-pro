@@ -6,7 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Configuration CORS complète pour Replit
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://*.replit.dev'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Middleware de logging
@@ -269,11 +275,12 @@ app.post('/api/sites/update-all-status', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Serveur backend démarré sur http://0.0.0.0:${PORT}`);
-  console.log(`API accessible sur: http://0.0.0.0:${PORT}/api`);
+  console.log(`🚀 Serveur backend démarré sur http://0.0.0.0:${PORT}`);
+  console.log(`📡 API accessible sur: http://0.0.0.0:${PORT}/api`);
+  console.log(`🌐 Frontend accessible sur: http://0.0.0.0:5173`);
 }).on('error', (err) => {
-  console.error('Erreur serveur:', err);
+  console.error('❌ Erreur serveur:', err);
   if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} déjà utilisé`);
+    console.error(`⚠️ Port ${PORT} déjà utilisé`);
   }
 });

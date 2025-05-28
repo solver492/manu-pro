@@ -4,10 +4,10 @@ const getApiBaseUrl = () => {
     return 'http://localhost:5000/api';
   }
   
-  // Pour Replit, utiliser l'URL avec le port backend
+  // Pour Replit, utiliser l'URL correcte avec le même hostname mais port 5000
   const hostname = window.location.hostname;
   if (hostname.includes('.replit.dev')) {
-    return `${window.location.protocol}//${hostname.replace('-00-', '-01-')}:5000/api`;
+    return `${window.location.protocol}//${hostname}:5000/api`;
   }
   
   return `${window.location.protocol}//${hostname}:5000/api`;
@@ -100,6 +100,11 @@ class ApiService {
   // Stats
   async getDashboardStats() {
     return this.request('/stats/dashboard');
+  }
+
+  // Test de santé
+  async healthCheck() {
+    return this.request('/health');
   }
 }
 
