@@ -173,20 +173,33 @@ app.post('/api/login', (req, res) => {
 // Routes pour les statistiques
 app.get('/api/stats/dashboard', (req, res) => {
   try {
+    console.log('Récupération des statistiques dashboard...');
+    
     const thisMonth = queries.getShipmentsThisMonth.get()?.total || 0;
     const thisYear = queries.getShipmentsThisYear.get()?.total || 0;
     const monthlyData = queries.getMonthlyShipments.all();
     const topSites = queries.getTopSites.all();
 
-    res.json({
+    console.log('Stats calculées:', {
+      thisMonth,
+      thisYear,
+      monthlyData: monthlyData.length,
+      topSites: topSites.length
+    });
+
+    const result = {
       totalHandlersMonth: thisMonth,
       totalRevenueMonth: thisMonth * 150,
       totalHandlersYear: thisYear,
       totalRevenueYear: thisYear * 150,
-      monthlySends: monthlyData,
-      topClients: topSites
-    });
+      monthlySends: monthlyData || [],
+      topClients: topSites || []
+    };
+
+    console.log('Réponse dashboard stats:', result);
+    res.json(result);
   } catch (error) {
+    console.error('Erreur stats dashboard:', error);
     res.status(500).json({ error: error.message });
   }
 });

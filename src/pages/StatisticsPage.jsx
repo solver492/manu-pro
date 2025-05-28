@@ -29,6 +29,9 @@ const StatisticsPage = () => {
       const sites = await ApiService.getSites();
       const dashboardStats = await ApiService.getDashboardStats();
       
+      console.log('Sites reçus:', sites);
+      console.log('Dashboard stats:', dashboardStats);
+      
       const now = new Date();
       const currentMonth = now.getMonth();
       const currentYear = now.getFullYear();
@@ -38,42 +41,47 @@ const StatisticsPage = () => {
       // Traiter les statistiques par site
       const siteStatsPromises = sites.map(async (site) => {
         try {
-          const siteDetail = await ApiService.getSite(site.id);
           const siteShipments = await ApiService.getSiteShipments(site.id);
+          console.log(`Envois pour site ${site.name}:`, siteShipments);
           
           let handlersThisMonth = 0;
           let handlersThisYear = 0;
           let handlersPrevMonth = 0;
 
-          if (siteShipments && siteShipments.data) {
+          if (siteShipments && siteShipments.data && Array.isArray(siteShipments.data)) {
             siteShipments.data.forEach(ship => {
               const shipDate = new Date(ship.shipment_date);
+              const handlerCount = parseInt(ship.handler_count) || 0;
+              
               if (shipDate.getFullYear() === currentYear) {
-                handlersThisYear += ship.handler_count;
+                handlersThisYear += handlerCount;
                 if (shipDate.getMonth() === currentMonth) {
-                  handlersThisMonth += ship.handler_count;
+                  handlersThisMonth += handlerCount;
                 }
               }
               if (shipDate.getFullYear() === prevMonthYear && shipDate.getMonth() === prevMonth) {
-                handlersPrevMonth += ship.handler_count;
+                handlersPrevMonth += handlerCount;
               }
             });
           }
           
           const evolution = handlersThisMonth - handlersPrevMonth;
-          return {
+          const result = {
             id: site.id,
-            name: site.name,
+            name: site.name || 'Site inconnu',
             handlersThisMonth,
             handlersThisYear,
             revenueGenerated: handlersThisYear * HANDLER_COST,
             evolution,
           };
+          
+          console.log(`Stats pour ${site.name}:`, result);
+          return result;
         } catch (error) {
           console.error(`Erreur pour le site ${site.id}:`, error);
           return {
             id: site.id,
-            name: site.name,
+            name: site.name || 'Site inconnu',
             handlersThisMonth: 0,
             handlersThisYear: 0,
             revenueGenerated: 0,
@@ -83,6 +91,7 @@ const StatisticsPage = () => {
       });
 
       const siteStats = await Promise.all(siteStatsPromises);
+      console.log('Stats finales des sites:', siteStats);
       setStatsData(siteStats.sort((a, b) => b.revenueGenerated - a.revenueGenerated));
 
       // Traiter l'évolution mensuelle
@@ -91,24 +100,32 @@ const StatisticsPage = () => {
         count: 0,
       }));
 
-      if (dashboardStats && dashboardStats.monthlySends) {
+      if (dashboardStats && dashboardStats.monthlySends && Array.isArray(dashboardStats.monthlySends)) {
         dashboardStats.monthlySends.forEach(item => {
           const monthIndex = parseInt(item.month) - 1;
           if (monthIndex >= 0 && monthIndex < 12) {
-            monthlyEvolutionData[monthIndex].count = item.count || 0;
+            monthlyEvolutionData[monthIndex].count = parseInt(item.count) || 0;
           }
         });
       }
 
+      console.log('Données évolution mensuelle:', monthlyEvolutionData);
       setOverallMonthlyEvolution(monthlyEvolutionData);
 
     } catch (error) {
       console.error('Erreur lors du chargement des statistiques:', error);
       toast({ 
         title: "Erreur", 
-        description: "Impossible de charger les statistiques.", 
+        description: `Impossible de charger les statistiques: ${error.message}`, 
         variant: "destructive" 
       });
+      
+      // Initialiser avec des données vides en cas d'erreur
+      setStatsData([]);
+      setOverallMonthlyEvolution(Array(12).fill(0).map((_, i) => ({
+        month: new Date(0, i).toLocaleString('fr-FR', { month: 'short' }),
+        count: 0,
+      })));
     } finally {
       setIsLoading(false);
     }
