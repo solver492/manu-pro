@@ -4,9 +4,10 @@ const getApiBaseUrl = () => {
     return 'http://localhost:5000/api';
   }
   
-  // Pour Replit, utiliser l'URL correcte avec le même hostname mais port 5000
+  // Pour Replit, utiliser la même URL que le frontend mais avec port 5000
   const hostname = window.location.hostname;
   if (hostname.includes('.replit.dev')) {
+    // Utiliser le même hostname mais avec le port 5000
     return `${window.location.protocol}//${hostname}:5000/api`;
   }
   
@@ -18,6 +19,8 @@ const API_BASE_URL = getApiBaseUrl();
 class ApiService {
   async request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`🌐 Requête API: ${url}`);
+    
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -27,6 +30,8 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
+      console.log(`📡 Réponse API (${endpoint}):`, response.status, response.statusText);
+      
       if (!response.ok) {
         let errorData;
         try {
@@ -38,7 +43,8 @@ class ApiService {
       }
       return await response.json();
     } catch (error) {
-      console.error(`API Error (${endpoint}):`, error.message || error);
+      console.error(`❌ API Error (${endpoint}):`, error.message || error);
+      console.error(`🔗 URL tentée: ${url}`);
       throw error;
     }
   }

@@ -8,7 +8,14 @@ const PORT = process.env.PORT || 5000;
 
 // Configuration CORS complète pour Replit
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://*.replit.dev'],
+  origin: function (origin, callback) {
+    // Permettre les requêtes sans origin (ex: Postman) et les domaines Replit
+    if (!origin) return callback(null, true);
+    if (origin.includes('localhost') || origin.includes('.replit.dev')) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Permettre tous les origins pour le développement
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
