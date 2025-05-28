@@ -1,12 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
-import ApiService from '@/services/api';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import ApiService from '../services/api';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Button } from '../components/ui/button';
 import { Download, TrendingUp, TrendingDown, BarChartHorizontalBig, LineChart, Printer } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '../components/ui/use-toast';
 
 const StatisticsPage = () => {
   const [statsData, setStatsData] = useState([]);
@@ -26,21 +26,42 @@ const StatisticsPage = () => {
       setIsLoading(true);
       console.log('🔄 Chargement des statistiques...');
       
-      // Récupérer les sites et leurs statistiques
-      const sites = await ApiService.getSites();
-      console.log('📊 Sites récupérés:', sites?.length || 0);
+      let sites = [];
+      let dashboardStats = null;
       
-      const dashboardStats = await ApiService.getDashboardStats();
-      console.log('📈 Stats dashboard récupérées:', dashboardStats);
+      try {
+        // Tentative de récupération via API
+        sites = await ApiService.getSites();
+        dashboardStats = await ApiService.getDashboardStats();
+        console.log('📊 Sites récupérés via API:', sites?.length || 0);
+      } catch (apiError) {
+        console.warn('⚠️ API non disponible, utilisation des données localStorage:', apiError.message);
+        
+        // Fallback vers localStorage
+        const storedSites = JSON.parse(localStorage.getItem('clientSites') || '[]');
+        const storedShipments = JSON.parse(localStorage.getItem('shipments') || '[]');
+        
+        sites = storedSites;
+        
+        // Simuler les stats dashboard à partir des données locales
+        const currentYear = new Date().getFullYear();
+        const monthlySends = Array(12).fill(0).map((_, index) => {
+          const count = storedShipments.filter(ship => {
+            const shipDate = new Date(ship.shipment_date);
+            return shipDate.getFullYear() === currentYear && shipDate.getMonth() === index;
+          }).reduce((sum, ship) => sum + (parseInt(ship.handler_count) || 0), 0);
+          
+          return { month: (index + 1).toString(), count };
+        });
+        
+        dashboardStats = { monthlySends };
+        console.log('📊 Données récupérées depuis localStorage:', sites.length, 'sites');
+      }
       
       // Validation des données reçues
       if (!sites || !Array.isArray(sites)) {
-        console.warn('⚠️ Aucun site trouvé ou format invalide');
-        throw new Error('Aucun site disponible');
-      }
-      
-      if (!dashboardStats) {
-        console.warn('⚠️ Statistiques dashboard indisponibles');
+        console.warn('⚠️ Aucun site trouvé');
+        sites = [];
       }
       
       const now = new Date();
@@ -52,15 +73,26 @@ const StatisticsPage = () => {
       // Traiter les statistiques par site
       const siteStatsPromises = sites.map(async (site) => {
         try {
-          const siteShipments = await ApiService.getSiteShipments(site.id);
-          console.log(`Envois pour site ${site.name}:`, siteShipments);
+          let siteShipments = [];
+          
+          try {
+            // Tentative API
+            const apiShipments = await ApiService.getSiteShipments(site.id);
+            siteShipments = apiShipments?.data || [];
+          } catch (error) {
+            // Fallback localStorage
+            const storedShipments = JSON.parse(localStorage.getItem('shipments') || '[]');
+            siteShipments = storedShipments.filter(ship => ship.site_id === site.id);
+          }
+          
+          console.log(`Envois pour site ${site.name}:`, siteShipments.length);
           
           let handlersThisMonth = 0;
           let handlersThisYear = 0;
           let handlersPrevMonth = 0;
 
-          if (siteShipments && siteShipments.data && Array.isArray(siteShipments.data)) {
-            siteShipments.data.forEach(ship => {
+          if (Array.isArray(siteShipments)) {
+            siteShipments.forEach(ship => {
               const shipDate = new Date(ship.shipment_date);
               const handlerCount = parseInt(ship.handler_count) || 0;
               
@@ -126,17 +158,27 @@ const StatisticsPage = () => {
     } catch (error) {
       console.error('Erreur lors du chargement des statistiques:', error);
       toast({ 
-        title: "Erreur", 
-        description: `Impossible de charger les statistiques: ${error.message}`, 
-        variant: "destructive" 
+        title: "Mode Démo", 
+        description: "Affichage des données de démonstration (API indisponible)", 
+        variant: "default" 
       });
       
-      // Initialiser avec des données vides en cas d'erreur
-      setStatsData([]);
-      setOverallMonthlyEvolution(Array(12).fill(0).map((_, i) => ({
-        month: new Date(0, i).toLocaleString('fr-FR', { month: 'short' }),
-        count: 0,
-      })));
+      // Données de démonstration
+      const demoStats = [
+        { id: 1, name: "Site Demo A", handlersThisMonth: 45, handlersThisYear: 520, revenueGenerated: 78000, evolution: 12 },
+        { id: 2, name: "Site Demo B", handlersThisMonth: 32, handlersThisYear: 380, revenueGenerated: 57000, evolution: -5 },
+        { id: 3, name: "Site Demo C", handlersThisMonth: 28, handlersThisYear: 295, revenueGenerated: 44250, evolution: 8 }
+      ];
+      
+      const demoEvolution = [
+        { month: 'Jan', count: 45 }, { month: 'Fév', count: 52 }, { month: 'Mar', count: 38 },
+        { month: 'Avr', count: 61 }, { month: 'Mai', count: 47 }, { month: 'Jun', count: 55 },
+        { month: 'Jul', count: 42 }, { month: 'Aoû', count: 39 }, { month: 'Sep', count: 48 },
+        { month: 'Oct', count: 53 }, { month: 'Nov', count: 41 }, { month: 'Déc', count: 38 }
+      ];
+      
+      setStatsData(demoStats);
+      setOverallMonthlyEvolution(demoEvolution);
     } finally {
       setIsLoading(false);
     }
