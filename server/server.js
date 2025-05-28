@@ -191,6 +191,45 @@ app.get('/api/stats/dashboard', (req, res) => {
   }
 });
 
+app.get('/api/stats/detailed', (req, res) => {
+  try {
+    const sites = queries.getAllSites.all();
+    const allShipments = queries.getAllShipments.all();
+    
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    
+    const siteStats = sites.map(site => {
+      const siteShipments = allShipments.filter(s => s.site_id === site.id);
+      
+      let handlersThisMonth = 0;
+      let handlersThisYear = 0;
+      
+      siteShipments.forEach(shipment => {
+        const shipDate = new Date(shipment.shipment_date);
+        if (shipDate.getFullYear() === currentYear) {
+          handlersThisYear += shipment.handler_count;
+          if (shipDate.getMonth() === currentMonth) {
+            handlersThisMonth += shipment.handler_count;
+          }
+        }
+      });
+      
+      return {
+        id: site.id,
+        name: site.name,
+        handlersThisMonth,
+        handlersThisYear,
+        revenueGenerated: handlersThisYear * 150
+      };
+    });
+    
+    res.json({ siteStats });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Mettre à jour tous les sites en actif
 // Mettre à jour le statut d'un site spécifique
 app.post('/api/sites/:id/status', (req, res) => {

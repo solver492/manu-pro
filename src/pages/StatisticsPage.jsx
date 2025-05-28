@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import ApiService from '@/services/api';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -8,65 +9,110 @@ import { motion } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
 
 const StatisticsPage = () => {
-  const [clientSites] = useLocalStorage('clientSites', []);
-  const [shipments] = useLocalStorage('shipments', []);
   const [statsData, setStatsData] = useState([]);
   const [overallMonthlyEvolution, setOverallMonthlyEvolution] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const HANDLER_COST = 150;
 
   useEffect(() => {
     document.title = "Statistiques | MonAuxiliaire Manu-Pro";
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const prevMonth = (currentMonth === 0) ? 11 : currentMonth - 1;
-    const prevMonthYear = (currentMonth === 0) ? currentYear - 1 : currentYear;
+    fetchStatisticsData();
+  }, []);
 
-    const siteStats = clientSites.map(site => {
-      let handlersThisMonth = 0;
-      let handlersThisYear = 0;
-      let handlersPrevMonth = 0;
+  const fetchStatisticsData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Récupérer les sites et leurs statistiques
+      const sites = await ApiService.getSites();
+      const dashboardStats = await ApiService.getDashboardStats();
+      
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const prevMonth = (currentMonth === 0) ? 11 : currentMonth - 1;
+      const prevMonthYear = (currentMonth === 0) ? currentYear - 1 : currentYear;
 
-      shipments.filter(s => s.siteId === site.id).forEach(ship => {
-        const shipDate = new Date(ship.shipmentDate);
-        if (shipDate.getFullYear() === currentYear) {
-          handlersThisYear += ship.handlerCount;
-          if (shipDate.getMonth() === currentMonth) {
-            handlersThisMonth += ship.handlerCount;
+      // Traiter les statistiques par site
+      const siteStatsPromises = sites.map(async (site) => {
+        try {
+          const siteDetail = await ApiService.getSite(site.id);
+          const siteShipments = await ApiService.getSiteShipments(site.id);
+          
+          let handlersThisMonth = 0;
+          let handlersThisYear = 0;
+          let handlersPrevMonth = 0;
+
+          if (siteShipments && siteShipments.data) {
+            siteShipments.data.forEach(ship => {
+              const shipDate = new Date(ship.shipment_date);
+              if (shipDate.getFullYear() === currentYear) {
+                handlersThisYear += ship.handler_count;
+                if (shipDate.getMonth() === currentMonth) {
+                  handlersThisMonth += ship.handler_count;
+                }
+              }
+              if (shipDate.getFullYear() === prevMonthYear && shipDate.getMonth() === prevMonth) {
+                handlersPrevMonth += ship.handler_count;
+              }
+            });
           }
-        }
-        if (shipDate.getFullYear() === prevMonthYear && shipDate.getMonth() === prevMonth) {
-          handlersPrevMonth += ship.handlerCount;
+          
+          const evolution = handlersThisMonth - handlersPrevMonth;
+          return {
+            id: site.id,
+            name: site.name,
+            handlersThisMonth,
+            handlersThisYear,
+            revenueGenerated: handlersThisYear * HANDLER_COST,
+            evolution,
+          };
+        } catch (error) {
+          console.error(`Erreur pour le site ${site.id}:`, error);
+          return {
+            id: site.id,
+            name: site.name,
+            handlersThisMonth: 0,
+            handlersThisYear: 0,
+            revenueGenerated: 0,
+            evolution: 0,
+          };
         }
       });
-      
-      const evolution = handlersThisMonth - handlersPrevMonth;
-      return {
-        id: site.id,
-        name: site.name,
-        handlersThisMonth,
-        handlersThisYear,
-        revenueGenerated: handlersThisYear * HANDLER_COST,
-        evolution,
-      };
-    });
-    setStatsData(siteStats.sort((a,b) => b.revenueGenerated - a.revenueGenerated));
 
-    const monthlyEvolutionData = Array(12).fill(0).map((_, i) => ({
-      month: new Date(0, i).toLocaleString('fr-FR', { month: 'short' }),
-      count: 0,
-    }));
-    shipments.forEach(shipment => {
-      const shipmentDate = new Date(shipment.shipmentDate);
-      if (shipmentDate.getFullYear() === currentYear) {
-        monthlyEvolutionData[shipmentDate.getMonth()].count += shipment.handlerCount;
+      const siteStats = await Promise.all(siteStatsPromises);
+      setStatsData(siteStats.sort((a, b) => b.revenueGenerated - a.revenueGenerated));
+
+      // Traiter l'évolution mensuelle
+      const monthlyEvolutionData = Array(12).fill(0).map((_, i) => ({
+        month: new Date(0, i).toLocaleString('fr-FR', { month: 'short' }),
+        count: 0,
+      }));
+
+      if (dashboardStats && dashboardStats.monthlySends) {
+        dashboardStats.monthlySends.forEach(item => {
+          const monthIndex = parseInt(item.month) - 1;
+          if (monthIndex >= 0 && monthIndex < 12) {
+            monthlyEvolutionData[monthIndex].count = item.count || 0;
+          }
+        });
       }
-    });
-    setOverallMonthlyEvolution(monthlyEvolutionData);
 
-  }, [clientSites, shipments]);
+      setOverallMonthlyEvolution(monthlyEvolutionData);
+
+    } catch (error) {
+      console.error('Erreur lors du chargement des statistiques:', error);
+      toast({ 
+        title: "Erreur", 
+        description: "Impossible de charger les statistiques.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleExportCSV = () => {
     if (statsData.length === 0) {
@@ -94,6 +140,18 @@ const StatisticsPage = () => {
     window.print();
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-8 p-1">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Chargement des statistiques...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 p-1 print:p-0">
@@ -160,8 +218,8 @@ const StatisticsPage = () => {
             </CardHeader>
             <CardContent className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
               {statsData.sort((a,b) => b.handlersThisYear - a.handlersThisYear).slice(0,10).map((site, index) => {
-                const maxSiteSends = Math.max(...statsData.map(s => s.handlersThisYear).filter(s => s > 0), 1); // Ensure maxSiteSends is at least 1
-                const barWidth = (site.handlersThisYear / maxSiteSends) * 100;
+                const maxSiteSends = Math.max(...statsData.map(s => s.handlersThisYear), 1);
+                const barWidth = maxSiteSends > 0 ? (site.handlersThisYear / maxSiteSends) * 100 : 0;
                 return (
                   <div key={site.id} className="text-sm">
                     <div className="flex justify-between mb-1">
@@ -197,7 +255,7 @@ const StatisticsPage = () => {
                   <text key={`label-${index}`} x={25 + index * (250/11)} y="145" fontSize="8" fill="hsl(var(--muted-foreground))" textAnchor="middle">{data.month}</text>
                 ))}
                 {(() => {
-                  const maxCount = Math.max(...overallMonthlyEvolution.map(d => d.count).filter(c => c > 0), 1); // Ensure maxCount is at least 1
+                  const maxCount = Math.max(...overallMonthlyEvolution.map(d => d.count), 1);
                   const points = overallMonthlyEvolution.map((data, index) => 
                     `${25 + index * (250/11)},${130 - (data.count / maxCount * 100)}`
                   ).join(' ');
