@@ -16,10 +16,14 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await ApiService.login(email, password);
-      setUser(response.user);
-      return { success: true };
+      if (response && response.user) {
+        setUser(response.user);
+        return response.user;
+      }
+      return null;
     } catch (error) {
-      return { success: false, error: error.message };
+      console.error('Login error:', error);
+      return null;
     }
   };
 

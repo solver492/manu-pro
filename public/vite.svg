@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32px" height="32px" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>MonAuxiliaire</title>
+    <g id="Icon" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <circle id="Background" fill="#2563EB" cx="16" cy="16" r="16"/>
+        <path d="M16,8 L22,12 L22,20 L16,24 L10,20 L10,12 L16,8 Z" id="Hexagon" stroke="#FFFFFF" stroke-width="2"/>
+        <path d="M16,12 L19,14 L19,18 L16,20 L13,18 L13,14 L16,12 Z" id="Inner-Hexagon" fill="#FFFFFF"/>
+    </g>
+</svg>

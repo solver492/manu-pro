@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Users, DollarSign, CalendarDays, BarChart2, Send, ListOrdered } from 'lucide-react';
+import { ArrowLeft, Users, DollarSign, CalendarDays, BarChart2, Send, ListOrdered, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ApiService from '@/services/api';
 
@@ -14,10 +15,21 @@ const SiteDetailPage = () => {
   const [siteStats, setSiteStats] = useState({
     handlersToday: 0,
     handlersMonth: 0,
-    historyLast6Months: [],
     totalCostGenerated: 0,
+    historyLast6Months: [],
   });
   const [siteShipmentHistory, setSiteShipmentHistory] = useState([]);
+  const [searchDate, setSearchDate] = useState('');
+
+  // Filtrer l'historique par date
+  const filteredShipmentHistory = React.useMemo(() => {
+    if (!searchDate) return siteShipmentHistory;
+
+    const searchDateStr = new Date(searchDate).toISOString().split('T')[0];
+    return siteShipmentHistory.filter(shipment => 
+      shipment.shipment_date.startsWith(searchDateStr)
+    );
+  }, [siteShipmentHistory, searchDate]);
 
   const HANDLER_COST = 150;
 
@@ -32,52 +44,25 @@ const SiteDetailPage = () => {
         setSite(siteResponse);
         setShipments(shipmentsResponse.data);
 
-        const currentSite = siteResponse;
-
-        if (currentSite) {
-          document.title = `Détails Site - ${currentSite.name} | MonAuxiliaire Manu-Pro`;
-          const now = new Date();
-          const todayStr = now.toISOString().split('T')[0];
-          const currentMonth = now.getMonth();
-          const currentYear = now.getFullYear();
-
-          let handlersToday = 0;
-          let handlersMonth = 0;
-          const historyLast6Months = Array(6).fill(null).map((_, i) => {
-            const d = new Date(now);
-            d.setMonth(now.getMonth() - i);
-            return { month: d.toLocaleString('fr-FR', { month: 'short' }), year: d.getFullYear(), count: 0 };
-          }).reverse();
-
-          let totalCostGenerated = 0;
-          const siteSpecificShipments = shipmentsResponse.data
-            .filter(ship => ship.siteId === siteId)
-            .sort((a, b) => new Date(b.shipmentDate) - new Date(a.shipmentDate));
-
-          setSiteShipmentHistory(siteSpecificShipments);
-
-          siteSpecificShipments.forEach(ship => {
-            const shipmentDate = new Date(ship.shipmentDate);
-            const shipmentMonth = shipmentDate.getMonth();
-            const shipmentYear = shipmentDate.getFullYear();
-
-            totalCostGenerated += ship.handlerCount * HANDLER_COST;
-
-            if (ship.shipmentDate === todayStr) {
-              handlersToday += ship.handlerCount;
-            }
-            if (shipmentMonth === currentMonth && shipmentYear === currentYear) {
-              handlersMonth += ship.handlerCount;
-            }
-
-            historyLast6Months.forEach(histMonth => {
-              if (histMonth.month === shipmentDate.toLocaleString('fr-FR', { month: 'short' }) && histMonth.year === shipmentYear) {
-                histMonth.count += ship.handlerCount;
-              }
-            });
+        if (siteResponse) {
+          document.title = `Détails Site - ${siteResponse.name} | MonAuxiliaire Manu-Pro`;
+          
+          // Mettre à jour les statistiques
+          setSiteStats({
+            handlersToday: siteResponse.stats.handlersToday,
+            handlersMonth: siteResponse.stats.handlersMonth,
+            totalCostGenerated: siteResponse.stats.totalCost,
+            historyLast6Months: siteResponse.stats.monthlyHistory
           });
 
-          setSiteStats({ handlersToday, handlersMonth, historyLast6Months, totalCostGenerated });
+          // Trier et mettre à jour l'historique
+          const sortedShipments = shipmentsResponse.data
+            .map(shipment => ({
+              ...shipment,
+              cost: shipment.handler_count * HANDLER_COST
+            }))
+            .sort((a, b) => new Date(b.shipment_date) - new Date(a.shipment_date));
+          setSiteShipmentHistory(sortedShipments);
         }
       } catch (error) {
         console.error('Erreur lors du chargement des données:', error);
@@ -156,10 +141,8 @@ const SiteDetailPage = () => {
             <CardTitle className="text-sm font-medium">Statut du Site</CardTitle>
           </CardHeader>
           <CardContent>
-            <span className={`px-3 py-1.5 text-base font-semibold rounded-full ${
-              site.status === 'actif' ? 'bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100' : 'bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100'
-            }`}>
-              {site.status === 'actif' ? 'Actif' : 'Inactif'}
+            <span className="px-3 py-1.5 text-base font-semibold rounded-full bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100">
+              Actif
             </span>
           </CardContent>
         </Card>
@@ -198,9 +181,35 @@ const SiteDetailPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center"><ListOrdered className="mr-2 h-6 w-6 text-primary" /> Historique Détaillé des Envois</CardTitle>
             <CardDescription>Liste de tous les envois de manutentionnaires pour ce site.</CardDescription>
+            <div className="mt-4 flex items-center gap-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  value={searchDate}
+                  onChange={(e) => setSearchDate(e.target.value)}
+                  className="pl-8"
+                  placeholder="Rechercher par date"
+                />
+              </div>
+              {searchDate && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSearchDate('')}
+                  className="text-muted-foreground"
+                >
+                  Réinitialiser
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            {siteShipmentHistory.length > 0 ? (
+            {searchDate && filteredShipmentHistory.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground">
+                Aucun envoi trouvé pour la date du {new Date(searchDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            ) : filteredShipmentHistory.length > 0 ? (
               <div className="max-h-[400px] overflow-y-auto">
                 <Table>
                   <TableHeader className="sticky top-0 bg-card z-10">
@@ -211,11 +220,11 @@ const SiteDetailPage = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {siteShipmentHistory.map((shipment) => (
+                    {filteredShipmentHistory.map((shipment) => (
                       <TableRow key={shipment.id} className="hover:bg-muted/30">
-                        <TableCell>{new Date(shipment.shipmentDate).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}</TableCell>
-                        <TableCell className="text-center">{shipment.handlerCount}</TableCell>
-                        <TableCell className="text-right">{(shipment.handlerCount * HANDLER_COST).toLocaleString('fr-FR')}</TableCell>
+                        <TableCell>{new Date(shipment.shipment_date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}</TableCell>
+                        <TableCell className="text-center">{shipment.handler_count}</TableCell>
+                        <TableCell className="text-right">{shipment.cost.toLocaleString('fr-FR')} DH</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

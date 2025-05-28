@@ -32,16 +32,16 @@ const ClientSitesPage = () => {
       try {
         setIsLoading(true);
         const response = await ApiService.getSites();
-        setClientSites(response.data.map(site => ({
-          id: site.id,
-          name: site.name,
-          address: site.address,
-          status: site.status
-        })));
+        console.log('Réponse API:', response);
+        if (!Array.isArray(response)) {
+          throw new Error('Format de réponse invalide');
+        }
+        setClientSites(response);
       } catch (error) {
+        console.error('Erreur lors du chargement des sites:', error);
         toast({ 
-          title: "Erreur", 
-          description: "Impossible de charger les sites.", 
+          title: "Erreur de chargement", 
+          description: `Impossible de charger les sites : ${error.message}`, 
           variant: "destructive" 
         });
       } finally {
@@ -51,31 +51,23 @@ const ClientSitesPage = () => {
     fetchSites();
   }, [toast]);
 
-  const filteredSites = clientSites.filter(site =>
-    site.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (site.address && site.address.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Fonction de recherche par ID
+  const filteredSites = React.useMemo(() => {
+    if (!searchTerm.trim()) return clientSites;
 
-  const handleAddSite = async () => {
-    try {
-      const newSiteData = {
-        name: `Nouveau Site ${clientSites.length + 1}`,
-        address: 'Adresse à définir',
-        status: 'active'
-      };
-      const addedSite = await ApiService.createSite(newSiteData);
-      setClientSites(prevSites => [...prevSites, addedSite]);
-      toast({
-        title: "Site Ajouté",
-        description: `${addedSite.name} a été ajouté avec succès.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: `Impossible d'ajouter le site: ${error.message}`,
-        variant: "destructive"
-      });
-    }
+    const searchTermUpper = searchTerm.trim().toUpperCase();
+
+    return clientSites.filter(site => {
+      return site.id.toUpperCase().includes(searchTermUpper);
+    });
+  }, [clientSites, searchTerm]);
+
+  const handleAddSite = () => {
+    toast({
+      title: 'Information',
+      description: 'Disponible prochainement',
+      variant: 'default',
+    });
   };
 
   const handleEditSite = (siteId) => {
@@ -130,14 +122,24 @@ const ClientSitesPage = () => {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="mb-8"
       >
-        <div className="relative w-full sm:max-w-md mx-auto">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <div className="relative w-full max-w-lg">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            type="search"
-            placeholder="Rechercher un site par nom ou adresse..."
+            placeholder="Rechercher un site par ID (ex: IRIS, AZUR...)"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 w-full bg-background/70 shadow-sm"
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchTerm(value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setSearchTerm('');
+              }
+            }}
+            className="pl-8 w-full transition-all duration-200 focus:shadow-md"
+            type="search"
+            autoComplete="off"
+            spellCheck="false"
           />
         </div>
       </motion.div>
@@ -150,8 +152,7 @@ const ClientSitesPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <AnimatePresence>
             {filteredSites.map((site, index) => (
-              <motion.div
-                key={site.id}
+              <motion.div key={site.id}
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -163,14 +164,13 @@ const ClientSitesPage = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-xl text-primary flex items-center">
-                          <Briefcase className="mr-2 h-5 w-5" /> {site.name}
+                          <Briefcase className="mr-2 h-5 w-5" /> {site.id}
                         </CardTitle>
-                        <CardDescription className="text-xs">{site.address || 'Adresse non spécifiée'}</CardDescription>
+                        <CardDescription className="text-xs">{site.name || 'Nom non spécifié'}</CardDescription>
+                        <CardDescription className="text-xs mt-1">{site.address || 'Adresse non spécifiée'}</CardDescription>
                       </div>
-                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-full self-start ${
-                        site.status === 'actif' ? 'bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100' : 'bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100'
-                      }`}>
-                        {site.status === 'actif' ? 'Actif' : 'Inactif'}
+                      <span className="px-2 py-0.5 text-xs font-semibold rounded-full self-start bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100">
+                        Actif
                       </span>
                     </div>
                   </CardHeader>
@@ -178,7 +178,7 @@ const ClientSitesPage = () => {
                     {/* You can add more site details here if needed */}
                   </CardContent>
                   <CardFooter className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t border-border/50">
-                    <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
+                    <Button variant="outline" size="sm" asChild className="w-full sm:w-auto" disabled>
                       <Link to={`/sites/${site.id}`}>
                         <Eye className="mr-1 h-4 w-4" /> Exploiter
                       </Link>
@@ -188,28 +188,12 @@ const ClientSitesPage = () => {
                         <Send className="mr-1 h-4 w-4" /> Envoyer
                       </Link>
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleEditSite(site.id)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/50">
+                    <Button variant="ghost" size="icon" disabled title="Disponible prochainement" className="text-muted-foreground">
                       <Edit2 className="h-4 w-4" />
                     </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={() => setSiteToDelete(site)} className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/50">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer ce site ?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Cette action est irréversible. Le site "{siteToDelete?.name}" sera définitivement supprimé.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={() => setSiteToDelete(null)}>Annuler</AlertDialogCancel>
-                          <AlertDialogAction onClick={confirmDeleteSite} className="bg-destructive hover:bg-destructive/90">Supprimer</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Button variant="ghost" size="icon" disabled title="Disponible prochainement" className="text-muted-foreground">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </CardFooter>
                 </Card>
               </motion.div>

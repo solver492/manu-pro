@@ -75,7 +75,7 @@ const Layout = ({ children }) => {
          <footer className="py-6 bg-card/80 dark:bg-card/90 backdrop-blur-md shadow-inner mt-auto">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-muted-foreground">
             <p>&copy; {new Date().getFullYear()} MonAuxiliaire Manu-Pro. Tous droits réservés.</p>
-            <p>Conçu avec ❤️ par Hostinger Horizons</p>
+            <p></p>
           </div>
         </footer>
       )}

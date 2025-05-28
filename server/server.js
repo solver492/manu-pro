@@ -1,16 +1,19 @@
 import express from 'express';
 import cors from 'cors';
-import { queries } from './database.js';
+import { db, queries } from './database.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const app = express();
-const PORT = process.env.PORT || (process.env.REPL_SLUG ? 5000 : 3001);
+const PORT = process.env.PORT || 5000;
 
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+app.use(cors());
 app.use(express.json());
+
+// Middleware de logging
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`, req.body);
+  next();
+});
 
 // Route de test
 app.get('/api/health', (req, res) => {
@@ -20,9 +23,16 @@ app.get('/api/health', (req, res) => {
 // Routes pour les sites
 app.get('/api/sites', (req, res) => {
   try {
-    const sites = queries.getAllSites.all('active');
-    res.json({ data: sites });
+    const sites = queries.getAllSites.all();
+    // Forcer le statut actif pour tous les sites
+    const activeSites = sites.map(site => ({
+      ...site,
+      status: 'actif'
+    }));
+    console.log('Sites envoyés:', sites);
+    res.json(activeSites || []);
   } catch (error) {
+    console.error('Erreur lors de la récupération des sites:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -33,7 +43,28 @@ app.get('/api/sites/:id', (req, res) => {
     if (!site) {
       return res.status(404).json({ error: 'Site non trouvé' });
     }
-    res.json(site);
+
+    // Récupérer les statistiques du site
+    const todayStats = queries.getSiteTodayShipments.get(req.params.id);
+    const monthStats = queries.getSiteMonthShipments.get(req.params.id);
+    const totalCost = queries.getSiteTotalCost.get(req.params.id);
+    const monthlyHistory = queries.getSiteMonthlyHistory.all(req.params.id);
+    console.log('Historique mensuel:', monthlyHistory);
+
+    res.json({
+      ...site,
+      status: 'actif',
+      stats: {
+        handlersToday: todayStats?.total || 0,
+        handlersMonth: monthStats?.total || 0,
+        totalCost: totalCost?.total || 0,
+        monthlyHistory: monthlyHistory.map(m => ({
+          month: new Date(2000, m.month - 1).toLocaleString('fr-FR', { month: 'short' }),
+          year: m.year,
+          count: m.count
+        }))
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -46,31 +77,36 @@ app.post('/api/sites', (req, res) => {
     queries.insertSite.run(id, name, address, status);
     res.status(201).json({ id, name, address, status });
   } catch (error) {
+    console.error('Erreur lors de la création du site:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
 app.put('/api/sites/:id', (req, res) => {
   try {
+    const { id } = req.params;
     const { name, address, status } = req.body;
-    const result = queries.updateSite.run(name, address, status, req.params.id);
+    const result = queries.updateSite.run(name, address, status, id);
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Site non trouvé' });
     }
-    res.json({ id: req.params.id, name, address, status });
+    res.json({ id, name, address, status });
   } catch (error) {
+    console.error('Erreur lors de la mise à jour du site:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
 app.delete('/api/sites/:id', (req, res) => {
   try {
-    const result = queries.deleteSite.run(req.params.id);
+    const { id } = req.params;
+    const result = queries.deleteSite.run(id);
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Site non trouvé' });
     }
-    res.json({ message: 'Site supprimé avec succès' });
+    res.status(204).send();
   } catch (error) {
+    console.error('Erreur lors de la suppression du site:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -108,16 +144,28 @@ app.post('/api/shipments', (req, res) => {
 // Route d'authentification
 app.post('/api/login', (req, res) => {
   try {
+    console.log('Tentative de connexion:', req.body);
     const { email, password } = req.body;
     const user = queries.getUserByEmail.get(email);
-    if (!user || user.password !== password) {
+    console.log('Utilisateur trouvé:', user);
+    
+    if (!user) {
+      console.log('Utilisateur non trouvé');
       return res.status(401).json({ error: 'Identifiants incorrects' });
     }
+    
+    if (user.password !== password) {
+      console.log('Mot de passe incorrect');
+      return res.status(401).json({ error: 'Identifiants incorrects' });
+    }
+    
+    console.log('Connexion réussie');
     res.json({ 
       message: 'Connexion réussie', 
       user: { id: user.id, email: user.email, fullName: user.full_name } 
     });
   } catch (error) {
+    console.error('Erreur de login:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -140,6 +188,31 @@ app.get('/api/stats/dashboard', (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Mettre à jour tous les sites en actif
+// Mettre à jour le statut d'un site spécifique
+app.post('/api/sites/:id/status', (req, res) => {
+  console.log('Mise à jour du statut pour le site:', req.params.id);
+  console.log('Nouveau statut:', req.body);
+  try {
+    const { status } = req.body;
+    queries.updateSiteStatus.run(status, req.params.id);
+    res.json({ success: true, message: 'Statut du site mis à jour' });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du statut:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour du statut' });
+  }
+});
+
+app.post('/api/sites/update-all-status', (req, res) => {
+  try {
+    queries.updateAllSitesStatus.run();
+    res.json({ success: true, message: 'Tous les sites ont été mis à jour en actif' });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour des sites:', error);
+    res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour des sites' });
   }
 });
 

@@ -18,22 +18,31 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    const user = login(email, password);
-    if (user) {
-      toast({
-        title: 'Connexion réussie !',
-        description: `Bienvenue, ${user.fullName || user.email} !`,
-        variant: 'default',
-      });
-      navigate('/');
-    } else {
-      setError('Email ou mot de passe incorrect.');
+    try {
+      const user = await login(email, password);
+      if (user) {
+        toast({
+          title: 'Connexion réussie !',
+          description: `Bienvenue, ${user.fullName || user.email} !`,
+          variant: 'default',
+        });
+        navigate('/');
+      } else {
+        setError('Email ou mot de passe incorrect.');
+        toast({
+          title: 'Erreur de connexion',
+          description: 'Veuillez vérifier vos identifiants.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      setError('Une erreur est survenue lors de la connexion.');
       toast({
         title: 'Erreur de connexion',
-        description: 'Veuillez vérifier vos identifiants.',
+        description: error.message || 'Veuillez réessayer plus tard.',
         variant: 'destructive',
       });
     }

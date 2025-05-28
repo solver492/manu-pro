@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import ApiService from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,8 +15,7 @@ const SendHandlerPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [sites] = useLocalStorage('clientSites', []);
-  const [shipments, setShipments] = useLocalStorage('shipments', []);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [site, setSite] = useState(null);
   const [handlerCount, setHandlerCount] = useState('1');
@@ -27,15 +26,26 @@ const SendHandlerPage = () => {
   const HANDLER_COST = 150;
 
   useEffect(() => {
-    const currentSite = sites.find(s => s.id === siteId);
-    if (currentSite) {
-      setSite(currentSite);
-      document.title = `Envoyer Manutentionnaires - ${currentSite.name} | MonAuxiliaire Manu-Pro`;
-    } else {
-      toast({ title: "Erreur", description: "Site client non trouvé.", variant: "destructive" });
-      navigate('/sites');
-    }
-  }, [siteId, sites, navigate, toast]);
+    const fetchSite = async () => {
+      try {
+        setIsLoading(true);
+        const currentSite = await ApiService.getSite(siteId);
+        setSite(currentSite);
+        document.title = `Envoyer Manutentionnaires - ${currentSite.name} | MonAuxiliaire Manu-Pro`;
+      } catch (error) {
+        console.error('Erreur lors du chargement du site:', error);
+        toast({ 
+          title: "Erreur", 
+          description: "Site client non trouvé.", 
+          variant: "destructive" 
+        });
+        navigate('/sites');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSite();
+  }, [siteId, navigate, toast]);
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -48,23 +58,30 @@ const SendHandlerPage = () => {
     setIsConfirming(true);
   };
 
-  const confirmSend = () => {
-    const count = parseInt(handlerCount, 10);
-    const newShipment = {
-      id: `ship-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      siteId: site.id,
-      handlerCount: count,
-      shipmentDate: shipmentDate,
-      totalCost: count * HANDLER_COST,
-    };
-    setShipments(prevShipments => [...prevShipments, newShipment]);
-    toast({
-      title: "Envoi enregistré !",
-      description: `${count} manutentionnaire(s) envoyé(s) à ${site.name} le ${new Date(shipmentDate).toLocaleDateString('fr-FR')}.`,
-      variant: "default",
-    });
-    setIsConfirming(false);
-    navigate(`/sites/${siteId}`);
+  const confirmSend = async () => {
+    try {
+      const count = parseInt(handlerCount, 10);
+      const shipmentData = {
+        siteId: site.id,
+        handlerCount: count,
+        shipmentDate: shipmentDate,
+      };
+      await ApiService.createShipment(shipmentData);
+      toast({
+        title: "Envoi enregistré !",
+        description: `${count} manutentionnaire(s) envoyé(s) à ${site.name} le ${new Date(shipmentDate).toLocaleDateString('fr-FR')}.`,
+        variant: "default",
+      });
+      setIsConfirming(false);
+      navigate(`/sites/${siteId}`);
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible d'enregistrer l'envoi",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!site) {

@@ -1,7 +1,7 @@
 
 const getApiBaseUrl = () => {
   if (window.location.hostname === 'localhost') {
-    return 'http://localhost:3001/api';
+    return 'http://localhost:5000/api';
   }
   
   // Pour Replit, utiliser l'URL avec le port backend
@@ -45,7 +45,8 @@ class ApiService {
 
   // Sites
   async getSites() {
-    return this.request('/sites');
+    const response = await this.request('/sites');
+    return Array.isArray(response) ? response : [];
   }
 
   async getSite(id) {
@@ -55,20 +56,20 @@ class ApiService {
   async createSite(siteData) {
     return this.request('/sites', {
       method: 'POST',
-      body: JSON.stringify(siteData),
+      body: JSON.stringify(siteData)
     });
   }
 
   async updateSite(id, siteData) {
     return this.request(`/sites/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(siteData),
+      body: JSON.stringify(siteData)
     });
   }
 
   async deleteSite(id) {
     return this.request(`/sites/${id}`, {
-      method: 'DELETE',
+      method: 'DELETE'
     });
   }
 
