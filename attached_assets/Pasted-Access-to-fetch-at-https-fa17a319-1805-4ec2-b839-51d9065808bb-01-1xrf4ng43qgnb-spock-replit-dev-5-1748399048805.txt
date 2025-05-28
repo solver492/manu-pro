@@ -1,0 +1,222 @@
+Access to fetch at 'https://fa17a319-1805-4ec2-b839-51d9065808bb-01-1xrf4ng43qgnb.spock.replit.dev:5000/api/login' from origin 'https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+login:116 
+            
+            
+            POST https://fa17a319-1805-4ec2-b839-51d9065808bb-01-1xrf4ng43qgnb.spock.replit.dev:5000/api/login net::ERR_FAILED
+window.fetch @ login:116
+request @ api.js:29
+login @ api.js:94
+login @ AuthContext.jsx:18
+handleSubmit @ LoginPage.jsx:25
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anonymous) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
+login:83  TypeError: Failed to fetch
+    at window.fetch (login:116:23)
+    at ApiService.request (api.js:29:30)
+    at ApiService.login (api.js:94:17)
+    at login (AuthContext.jsx:18:41)
+    at handleSubmit (LoginPage.jsx:25:26)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at invokeGuardedCallbackAndCatchFirstError (react-dom.development.js:4291:25)
+    at executeDispatch (react-dom.development.js:9041:3)
+console.error @ login:83
+(anonymous) @ login:136
+Promise.catch
+window.fetch @ login:134
+request @ api.js:29
+login @ api.js:94
+login @ AuthContext.jsx:18
+handleSubmit @ LoginPage.jsx:25
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anonymous) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
+login:83  API Error (/login): Failed to fetch
+console.error @ login:83
+request @ api.js:41
+await in request
+login @ api.js:94
+login @ AuthContext.jsx:18
+handleSubmit @ LoginPage.jsx:25
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anonymous) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
+login:83  Login error: TypeError: Failed to fetch
+    at window.fetch (login:116:23)
+    at ApiService.request (api.js:29:30)
+    at ApiService.login (api.js:94:17)
+    at login (AuthContext.jsx:18:41)
+    at handleSubmit (LoginPage.jsx:25:26)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at invokeGuardedCallbackAndCatchFirstError (react-dom.development.js:4291:25)
+    at executeDispatch (react-dom.development.js:9041:3)
+console.error @ login:83
+login @ AuthContext.jsx:25
+await in login
+handleSubmit @ LoginPage.jsx:25
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anonymous) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
+login:1  Access to fetch at 'https://fa17a319-1805-4ec2-b839-51d9065808bb-01-1xrf4ng43qgnb.spock.replit.dev:5000/api/login' from origin 'https://fa17a319-1805-4ec2-b839-51d9065808bb-00-1xrf4ng43qgnb.spock.replit.dev:5173' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+login:116 
+            
+            
+            POST https://fa17a319-1805-4ec2-b839-51d9065808bb-01-1xrf4ng43qgnb.spock.replit.dev:5000/api/login net::ERR_FAILED
+window.fetch @ login:116
+request @ api.js:29
+login @ api.js:94
+login @ AuthContext.jsx:18
+handleSubmit @ LoginPage.jsx:25
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anonymous) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
+login:83  TypeError: Failed to fetch
+    at window.fetch (login:116:23)
+    at ApiService.request (api.js:29:30)
+    at ApiService.login (api.js:94:17)
+    at login (AuthContext.jsx:18:41)
+    at handleSubmit (LoginPage.jsx:25:26)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at invokeGuardedCallbackAndCatchFirstError (react-dom.development.js:4291:25)
+    at executeDispatch (react-dom.development.js:9041:3)
+console.error @ login:83
+(anonymous) @ login:136
+Promise.catch
+window.fetch @ login:134
+request @ api.js:29
+login @ api.js:94
+login @ AuthContext.jsx:18
+handleSubmit @ LoginPage.jsx:25
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anonymous) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
+login:83  API Error (/login): Failed to fetch
+console.error @ login:83
+request @ api.js:41
+await in request
+login @ api.js:94
+login @ AuthContext.jsx:18
+handleSubmit @ LoginPage.jsx:25
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anonymous) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
+login:83  Login error: TypeError: Failed to fetch
+    at window.fetch (login:116:23)
+    at ApiService.request (api.js:29:30)
+    at ApiService.login (api.js:94:17)
+    at login (AuthContext.jsx:18:41)
+    at handleSubmit (LoginPage.jsx:25:26)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at invokeGuardedCallbackAndCatchFirstError (react-dom.development.js:4291:25)
+    at executeDispatch (react-dom.development.js:9041:3)
+console.error @ login:83
+login @ AuthContext.jsx:25
+await in login
+handleSubmit @ LoginPage.jsx:25
+callCallback2 @ react-dom.development.js:4164
+invokeGuardedCallbackDev @ react-dom.development.js:4213
+invokeGuardedCallback @ react-dom.development.js:4277
+invokeGuardedCallbackAndCatchFirstError @ react-dom.development.js:4291
+executeDispatch @ react-dom.development.js:9041
+processDispatchQueueItemsInOrder @ react-dom.development.js:9073
+processDispatchQueue @ react-dom.development.js:9086
+dispatchEventsForPlugins @ react-dom.development.js:9097
+(anonymous) @ react-dom.development.js:9288
+batchedUpdates$1 @ react-dom.development.js:26179
+batchedUpdates @ react-dom.development.js:3991
+dispatchEventForPluginEventSystem @ react-dom.development.js:9287
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ react-dom.development.js:6465
+dispatchEvent @ react-dom.development.js:6457
+dispatchDiscreteEvent @ react-dom.development.js:6430
